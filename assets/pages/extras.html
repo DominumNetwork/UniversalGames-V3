@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        body { background: transparent; color: var(--text, #e6e6ff); font-family: 'Orbitron', sans-serif; padding: 40px; margin: 0; overflow-x: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; max-width: 1000px; margin: 0 auto; }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+        .card:hover {
+            background: rgba(122, 92, 255, 0.15);
+            border-color: var(--accent, #7a5cff);
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        .card i { font-size: 3em; margin-bottom: 20px; color: var(--accent, #7a5cff); }
+        h1 { text-align: center; font-size: 2.5em; margin-bottom: 50px; letter-spacing: 4px; color: var(--accent, #7a5cff); }
+    </style>
+</head>
+<body>
+    <h1>EXTRAS</h1>
+    <div class="grid">
+        <div class="card" onclick="window.location.href='about.html'">
+            <i class="fa-solid fa-address-card"></i>
+            <h3>About</h3>
+            <p style="font-size: 0.8em; opacity: 0.7;">Learn about UniversalGames V2</p>
+        </div>
+        <div class="card" onclick="window.location.href='partners.html'">
+            <i class="fa-solid fa-handshake"></i>
+            <h3>Partners</h3>
+            <p style="font-size: 0.8em; opacity: 0.7;">The communities we support</p>
+        </div>
+        <div class="card" onclick="window.location.href='credits.html'">
+            <i class="fa-solid fa-star"></i>
+            <h3>Credits</h3>
+            <p style="font-size: 0.8em; opacity: 0.7;">The people who made this possible</p>
+        </div>
+    </div>
+</body>
+</html>
