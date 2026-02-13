@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniversalGames V2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0b0a16; --accent: #7a5cff; --text: #e6e6ff;
+            --side-width: 70px; --side-expand: 240px;
+        }
+        body { margin: 0; display: flex; background: var(--bg); color: var(--text); font-family: 'Orbitron', sans-serif; overflow: hidden; height: 100vh; }
+
+        aside {
+            width: var(--side-width); background: rgba(255, 255, 255, 0.03); border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; flex-direction: column; transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100; backdrop-filter: blur(10px);
+        }
+        aside:hover { width: var(--side-expand); }
+        .nav-item {
+            display: flex; align-items: center; padding: 20px 22px; cursor: pointer; color: var(--text);
+            text-decoration: none; transition: 0.3s; overflow: hidden; white-space: nowrap;
+        }
+        .nav-item:hover { background: rgba(122, 92, 255, 0.2); color: var(--accent); }
+        .nav-item i { font-size: 1.5rem; min-width: 30px; text-align: center; }
+        .nav-item span { margin-left: 20px; opacity: 0; transition: opacity 0.3s; font-weight: 500; }
+        aside:hover .nav-item span { opacity: 1; }
+        .nav-item:hover i { transform: scale(1.3) rotate(5deg); }
+
+        #content-frame { flex: 1; border: none; transition: opacity 0.3s ease; z-index: 2; background: transparent; }
+
+        .wave-bg { position: fixed; bottom: 0; left: 0; width: 100%; height: 150px; z-index: 1; pointer-events: none; }
+        .wave-anim > use { animation: move-forever 25s cubic-bezier(.55,.5,.45,.5) infinite; }
+        .wave-anim > use:nth-child(1) { animation-delay: -2s; animation-duration: 7s; }
+        .wave-anim > use:nth-child(2) { animation-delay: -3s; animation-duration: 10s; }
+        @keyframes move-forever { 0% { transform: translate3d(-90px,0,0); } 100% { transform: translate3d(85px,0,0); } }
+
+        .performance-mode .wave-bg { display: none; }
+    </style>
+</head>
+<body id="main-body">
+    <aside>
+        <div style="padding: 20px; text-align: center;"><img src="/assets/images/UVG.png" style="width: 35px;"></div>
+        <div class="nav-item" onclick="loadPage('home')"><i class="fa-solid fa-house"></i><span>HOME</span></div>
+        <div class="nav-item" onclick="loadPage('games')"><i class="fa-solid fa-gamepad"></i><span>GAMES</span></div>
+        <div class="nav-item" onclick="loadPage('settings')"><i class="fa-solid fa-gear"></i><span>SETTINGS</span></div>
+        <div class="nav-item" onclick="loadPage('extras')"><i class="fa-solid fa-plus"></i><span>EXTRAS</span></div>
+    </aside>
+
+    <iframe id="content-frame" src="/assets/pages/home.html"></iframe>
+
+    <svg class="wave-bg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
+        <defs><path id="wave-path" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"/></defs>
+        <g class="wave-anim">
+            <use href="#wave-path" x="48" y="0" fill="rgba(122, 92, 255, 0.3)" />
+            <use href="#wave-path" x="48" y="7" fill="var(--accent)" />
+        </g>
+    </svg>
+
+    <script>
+        function loadPage(page) {
+            const frame = document.getElementById("content-frame");
+            frame.style.opacity = "0";
+            setTimeout(() => {
+                frame.src = `assets/pages/${page}.html`;
+                frame.onload = () => { frame.style.opacity = "1"; applyGlobalState(); };
+            }, 250);
+        }
+
+        function applyGlobalState() {
+            const perfMode = localStorage.getItem("dominum-perf") === "true";
+            document.getElementById('main-body').classList.toggle('performance-mode', perfMode);
+            const cloak = JSON.parse(localStorage.getItem("dominum-cloak") || "{}");
+            if (cloak.title) document.title = cloak.title;
+        }
+        window.onload = applyGlobalState;
+    </script>
+</body>
+</html>
