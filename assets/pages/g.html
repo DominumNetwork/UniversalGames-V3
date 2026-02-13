@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root { --bg: #0b0a16; --accent: #7a5cff; --text: #e6e6ff; }
+        body { background: transparent; color: var(--text); font-family: 'Orbitron', sans-serif; padding: 20px; overflow-x: hidden; }
+        
+        #searchBar {
+            width: 100%; max-width: 400px; padding: 12px 20px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--accent);
+            border-radius: 10px; color: var(--text); font-family: inherit;
+            margin-bottom: 30px; outline: none; transition: 0.3s;
+        }
+        #searchBar:focus { box-shadow: 0 0 15px var(--accent); background: rgba(255,255,255,0.1); }
+
+        #container {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px; position: relative; z-index: 2;
+        }
+
+        .zone-item {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px; overflow: hidden; transition: 0.3s; cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+        .zone-item:hover { transform: translateY(-5px); border-color: var(--accent); background: rgba(122,92,255,0.1); }
+        .zone-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+        .zone-item button { 
+            width: 100%; padding: 12px; background: transparent; border: none; 
+            color: var(--text); font-family: inherit; font-size: 0.85em; cursor: pointer;
+        }
+
+        /* Fullscreen Overlay */
+        #fullscreenOverlay {
+            position: fixed; inset: 0; background: var(--bg); display: none;
+            flex-direction: column; z-index: 1000;
+        }
+        #fullscreenHeader { display: flex; justify-content: space-between; padding: 15px; background: rgba(0,0,0,0.5); }
+        .header-btn { background: none; border: none; color: var(--accent); font-size: 1.2rem; cursor: pointer; }
+        iframe { flex: 1; border: none; }
+    </style>
+</head>
+<body>
+    <input type="text" id="searchBar" placeholder="Search Games..." oninput="filterZones()">
+    <div id="container">Loading Assets...</div>
+
+    <div id="fullscreenOverlay">
+        <div id="fullscreenHeader">
+            <h2 id="gameTitle" style="margin:0; font-size: 1em;">Game</h2>
+            <div>
+                <button onclick="document.getElementById('zoneFullscreenFrame').requestFullscreen()" class="header-btn"><i class="fas fa-expand"></i></button>
+                <button onclick="closeZone()" class="header-btn"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <iframe id="zoneFullscreenFrame"></iframe>
+    </div>
+
+    <script>
+    const _c0v = "aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2duLW1hdGgvY292ZXJzQG1haW4=";
+    const _a33 = "aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2duLW1hdGgvYXNzZXRzQG1haW4vem9uZXMuanNvbg==";
+    const _aH0 = "aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2duLW1hdGgvaHRtbEBtYWlu";
+
+    const container = document.getElementById('container');
+    const coverURL = atob(_c0v);
+    const htmlURL = atob(_aH0);
+    let zones = [];
+
+    async function loadZones() {
+        try {
+            const response = await fetch(atob(_a33));
+            zones = await response.json();
+            displayZones(zones);
+        } catch (e) {
+            container.innerHTML = 'System Error: Data sync blocked.';
+        }
+    }
+
+    function displayZones(data) {
+        container.innerHTML = '';
+        data.forEach(zone => {
+            const item = document.createElement('div');
+            item.className = 'zone-item';
+            item.onclick = () => openZone(zone);
+            
+            const img = document.createElement('img');
+            img.src = zone.cover.replace('{COVER_URL}', coverURL).replace('{HTML_URL}', htmlURL);
+            
+            const btn = document.createElement('button');
+            btn.textContent = zone.name;
+            
+            item.appendChild(img); 
+            item.appendChild(btn);
+            container.appendChild(item);
+        });
+    }
+
+    function openZone(zone) {
+        const overlay = document.getElementById('fullscreenOverlay');
+        const frame = document.getElementById('zoneFullscreenFrame');
+        overlay.style.display = 'flex';
+        document.getElementById('gameTitle').textContent = zone.name;
+        frame.src = zone.url.replace('{HTML_URL}', htmlURL);
+    }
+
+    function closeZone() {
+        document.getElementById('fullscreenOverlay').style.display = 'none';
+        document.getElementById('zoneFullscreenFrame').src = '';
+    }
+
+    function filterZones() {
+        const q = document.getElementById('searchBar').value.toLowerCase();
+        displayZones(zones.filter(z => z.name.toLowerCase().includes(q)));
+    }
+
+    window.addEventListener('message', e => {
+        if(e.data.type === 'syncState') {
+            Object.entries(e.data.theme).forEach(([k,v]) => document.documentElement.style.setProperty(k,v));
+        }
+    });
+
+    loadZones();
+</script>
+</body>
+</html>
