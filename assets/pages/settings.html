@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body { background: transparent; color: #e6e6ff; font-family: 'Orbitron', sans-serif; padding: 40px; }
+        .group { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        label { display: block; margin-bottom: 8px; color: #7a5cff; font-size: 0.8em; }
+        select, input { width: 100%; padding: 10px; background: #0b0a16; border: 1px solid #7a5cff; color: white; border-radius: 5px; font-family: inherit; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        button { width: 100%; padding: 15px; background: #7a5cff; border: none; color: white; border-radius: 8px; cursor: pointer; font-family: inherit; transition: 0.3s; }
+        button:hover { background: #00bfff; }
+    </style>
+</head>
+<body>
+    <div style="max-width: 500px; margin: 0 auto;">
+        <h1 style="text-align: center;">DASHBOARD</h1>
+        
+        <div class="group">
+            <label>GLOBAL THEME</label>
+            <select id="theme">
+                <option value="default">Vivid Purple</option>
+                <option value="cyber">Toxic Cyber</option>
+                <option value="matrix">Digital Matrix</option>
+            </select>
+        </div>
+
+        <div class="group">
+            <label>TAB CLOAKING</label>
+            <input type="text" id="title" placeholder="Tab Title (e.g. My Drive)">
+            <input type="text" id="icon" placeholder="Favicon URL" style="margin-top:10px;">
+        </div>
+
+        <div class="group">
+            <div class="toggle-row">
+                <span>Performance Mode</span>
+                <input type="checkbox" id="perf" style="width: auto;">
+            </div>
+            <p style="font-size: 0.7em; opacity: 0.6; margin: 5px 0 0;">Disables background waves and heavy animations.</p>
+        </div>
+
+        <div class="group">
+            <button onclick="launchAB()">Open in about:blank</button>
+        </div>
+
+        <button onclick="save()">APPLY SETTINGS</button>
+    </div>
+
+    <script>
+        function launchAB() {
+            const win = window.open('about:blank', '_blank');
+            const iframe = win.document.createElement('iframe');
+            iframe.style.width = '100vw'; iframe.style.height = '100vh';
+            iframe.style.border = 'none'; iframe.style.margin = '0';
+            iframe.src = window.parent.location.href;
+            win.document.body.style.margin = '0';
+            win.document.body.appendChild(iframe);
+            window.parent.location.replace('https://google.com'); // Panic exit shell
+        }
+
+        function save() {
+            localStorage.setItem("dominum-theme", document.getElementById('theme').value);
+            localStorage.setItem("dominum-perf", document.getElementById('perf').checked);
+            const cloak = { title: document.getElementById('title').value, icon: document.getElementById('icon').value };
+            localStorage.setItem("dominum-cloak", JSON.stringify(cloak));
+
+            window.parent.postMessage({ type: 'updateSettings' }, '*');
+            alert("Settings Synchronized.");
+        }
+
+        document.getElementById('theme').value = localStorage.getItem("dominum-theme") || "default";
+        document.getElementById('perf').checked = localStorage.getItem("dominum-perf") === "true";
+    </script>
+</body>
+</html>
