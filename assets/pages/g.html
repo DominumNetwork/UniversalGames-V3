@@ -58,69 +58,157 @@
     </div>
 
     <script>
-    const _c0v = "aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2duLW1hdGgvY292ZXJzQG1haW4=";
-    const _a33 = "aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2duLW1hdGgvYXNzZXRzQG1haW4vem9uZXMuanNvbg==";
-    const _aH0 = "aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2duLW1hdGgvaHRtbEBtYWlu";
+const container = document.getElementById('container');
+const searchBar = document.getElementById('searchBar');
+const overlay = document.getElementById('fullscreenOverlay');
+const iframe = document.getElementById('zoneFullscreenFrame');
+const closeBtn = document.getElementById('closeFullscreen');
+const gameTitle = document.getElementById('gameTitle');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
 
-    const container = document.getElementById('container');
-    const coverURL = atob(_c0v);
-    const htmlURL = atob(_aH0);
-    let zones = [];
+const zonesURLs = [
+  "https://cdn.jsdelivr.net/gh/gn-math/assets@main/zones.json"
+];
 
-    async function loadZones() {
-        try {
-            const response = await fetch(atob(_a33));
-            zones = await response.json();
-            displayZones(zones);
-        } catch (e) {
-            container.innerHTML = 'System Error: Data sync blocked.';
-        }
-    }
+const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
+const htmlURL = "https://cdn.jsdelivr.net/gh/gn-math/html@main";
 
-    function displayZones(data) {
-        container.innerHTML = '';
-        data.forEach(zone => {
-            const item = document.createElement('div');
-            item.className = 'zone-item';
-            item.onclick = () => openZone(zone);
-            
-            const img = document.createElement('img');
-            img.src = zone.cover.replace('{COVER_URL}', coverURL).replace('{HTML_URL}', htmlURL);
-            
-            const btn = document.createElement('button');
-            btn.textContent = zone.name;
-            
-            item.appendChild(img); 
-            item.appendChild(btn);
-            container.appendChild(item);
-        });
-    }
+let zones = [];
+let zonesURL = zonesURLs[Math.floor(Math.random() * zonesURLs.length)];
 
-    function openZone(zone) {
-        const overlay = document.getElementById('fullscreenOverlay');
-        const frame = document.getElementById('zoneFullscreenFrame');
-        overlay.style.display = 'flex';
-        document.getElementById('gameTitle').textContent = zone.name;
-        frame.src = zone.url.replace('{HTML_URL}', htmlURL);
-    }
+async function loadZones() {
+  try {
+    const response = await fetch(zonesURL);
+    zones = await response.json();
+    zones = zones.filter(zone => zone.id >= 0 && zone.id <= 5000);
+    displayZones();
+  } catch (e) {
+    container.innerHTML = 'Failed to load zones.';
+  }
+}
 
-    function closeZone() {
-        document.getElementById('fullscreenOverlay').style.display = 'none';
-        document.getElementById('zoneFullscreenFrame').src = '';
-    }
+function displayZones() {
+  container.innerHTML = '';
+  zones.forEach(zone => {
+    const item = document.createElement('div');
+    item.className = 'zone-item';
 
-    function filterZones() {
-        const q = document.getElementById('searchBar').value.toLowerCase();
-        displayZones(zones.filter(z => z.name.toLowerCase().includes(q)));
-    }
+    const img = document.createElement('img');
+    img.dataset.src = zone.cover.replace('{COVER_URL}', coverURL).replace('{HTML_URL}', htmlURL);
+    img.alt = zone.name;
+    img.loading = 'lazy';
 
-    window.addEventListener('message', e => {
-        if(e.data.type === 'syncState') {
-            Object.entries(e.data.theme).forEach(([k,v]) => document.documentElement.style.setProperty(k,v));
-        }
+    const btn = document.createElement('button');
+    btn.textContent = zone.name;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      openZone(zone);
+    };
+    item.onclick = () => openZone(zone);
+    item.appendChild(img);
+    item.appendChild(btn);
+    container.appendChild(item);
+  });
+  const imgs = document.querySelectorAll('img[data-src]');
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const img = e.target;
+        img.src = img.dataset.src;
+        obs.unobserve(img);
+      }
     });
+  }, { rootMargin: '100px', threshold: 0.1 });
+  imgs.forEach(i => observer.observe(i));
+}
 
-    loadZones();
+function filterZones() {
+  const query = searchBar.value.toLowerCase();
+  const filtered = zones.filter(z => z.name.toLowerCase().includes(query));
+  displayFiltered(filtered);
+}
+
+function displayFiltered(filteredZones) {
+  container.innerHTML = '';
+  filteredZones.forEach(zone => {
+    const item = document.createElement('div');
+    item.className = 'zone-item';
+
+    const img = document.createElement('img');
+    img.dataset.src = zone.cover.replace('{COVER_URL}', coverURL).replace('{HTML_URL}', htmlURL);
+    img.alt = zone.name;
+    img.loading = 'lazy';
+
+    const btn = document.createElement('button');
+    btn.textContent = zone.name;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      openZone(zone);
+    };
+    item.onclick = () => openZone(zone);
+    item.appendChild(img);
+    item.appendChild(btn);
+    container.appendChild(item);
+  });
+  const imgs = document.querySelectorAll('img[data-src]');
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const img = e.target;
+        img.src = img.dataset.src;
+        obs.unobserve(img);
+      }
+    });
+  }, { rootMargin: '100px', threshold: 0.1 });
+  imgs.forEach(i => observer.observe(i));
+}
+
+async function openZone(zone) {
+  overlay.style.display = 'flex';
+
+  gameTitle.textContent = zone.name;
+  if (!zone.author) zone.author = 'Unknown';
+
+  const zoneUrl = zone.url;
+  if (!zoneUrl) {
+    alert('Zone URL is missing.');
+    return;
+  }
+
+  const isAbsolute = zoneUrl.startsWith('http');
+
+  if (isAbsolute) {
+    iframe.src = zoneUrl;
+  } else {
+    const fullUrl = zoneUrl.replace('{COVER_URL}', coverURL).replace('{HTML_URL}', htmlURL);
+    try {
+      const response = await fetch(fullUrl);
+      const htmlContent = await response.text();
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      iframe.src = blobUrl;
+      iframe.onload = () => {
+        URL.revokeObjectURL(blobUrl);
+      };
+    } catch (e) {
+      console.error('Blob load failed, falling back to direct URL:', e);
+      iframe.src = fullUrl;
+    }
+  }
+}
+
+document.getElementById('closeFullscreen').onclick = () => {
+  overlay.style.display = 'none';
+  iframe.src = '';
+};
+
+document.getElementById('fullscreenBtn').onclick = () => {
+  iframe.requestFullscreen().catch(() => {
+    alert('Fullscreen mode is not supported or blocked.');
+  });
+};
+
+loadZones();
 </script>
 </body>
 </html>
