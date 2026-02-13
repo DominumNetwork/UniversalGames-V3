@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: transparent; color: #e6e6ff; font-family: 'Orbitron', sans-serif; padding: 20px; overflow-x: hidden; }
+        
+        #searchBar { 
+            width: 100%; max-width: 500px; padding: 15px; 
+            background: rgba(255,255,255,0.05); border: 2px solid rgba(122, 92, 255, 0.3); 
+            border-radius: 12px; color: white; margin-bottom: 30px; font-family: inherit; font-size: 1em;
+            transition: 0.3s;
+        }
+        #searchBar:focus { border-color: #7a5cff; box-shadow: 0 0 15px rgba(122, 92, 255, 0.3); outline: none; }
+        
+        #container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 25px; 
+        }
+        
+        .card { 
+            background: rgba(255,255,255,0.03); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 16px; 
+            overflow: hidden; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            cursor: pointer; 
+            position: relative;
+        }
+        .card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            border-color: #7a5cff; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            z-index: 2;
+        }
+        
+        .img-wrap { width: 100%; padding-top: 100%; position: relative; background: #000; }
+        .card img { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            object-fit: cover; transition: 0.3s;
+        }
+        .card p { 
+            padding: 12px; font-size: 0.85em; margin: 0; 
+            text-align: center; background: rgba(0,0,0,0.4); 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        #overlay { 
+            position: fixed; inset: 0; background: #0b0a16; 
+            display: none; flex-direction: column; z-index: 2000; 
+        }
+        #header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 25px; background: rgba(10, 10, 20, 0.95); border-bottom: 1px solid #7a5cff;
+        }
+        #gTitle { color: #7a5cff; margin: 0; font-size: 1.2em; text-transform: uppercase; }
+        .ctrl-btn {
+            background: none; border: none; color: #fff; font-size: 1.2em; cursor: pointer;
+            margin-left: 15px; transition: 0.2s;
+        }
+        .ctrl-btn:hover { color: #7a5cff; transform: scale(1.2); }
+        
+        iframe { flex: 1; border: none; width: 100%; height: 100%; background-color: #fff; }
+    </style>
+</head>
+<body>
+
+    <input type="text" id="searchBar" placeholder="Search Game Library..." oninput="filter()">
+    <div id="container">Connecting to Dominum Network...</div>
+
+    <div id="overlay">
+        <div id="header">
+            <h2 id="gTitle">Game Title</h2>
+            <div>
+                <button class="ctrl-btn" onclick="toggleFull()" title="Fullscreen"><i class="fas fa-expand"></i></button>
+                <button class="ctrl-btn" onclick="closeGame()" title="Close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <iframe id="gFrame" allowfullscreen></iframe>
+    </div>
+
+    <script>
+        const CDN_BASE = "https://cdn." + "jsdelivr.net/gh/gn-math/";
+        const ASSETS_URL = CDN_BASE + "assets@main/zones.json";
+        const COVER_BASE = CDN_BASE + "covers@main";
+        const HTML_BASE  = CDN_BASE + "html@main";
+
+        let allZones = [];
+
+        async function init() {
+            try {
+                const res = await fetch(ASSETS_URL);
+                if (!res.ok) throw new Error("Network response was not ok");
+                allZones = await res.json();
+                
+                allZones = allZones.filter(z => z.id >= 0);
+                
+                render(allZones);
+            } catch (err) {
+                document.getElementById('container').innerHTML = 
+                    `<h3 style="color:red">Failed to load library.<br>Check internet or firewall.</h3>`;
+                console.error(err);
+            }
+        }
+
+        function render(list) {
+            const cont = document.getElementById('container');
+            cont.innerHTML = '';
+            
+            list.forEach(zone => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => loadGame(zone);
+
+                let imgUrl = zone.cover
+                    .replace('{COVER_URL}', COVER_BASE)
+                    .replace('{HTML_URL}', HTML_BASE);
+
+                card.innerHTML = `
+                    <div class="img-wrap">
+                        <img src="${imgUrl}" loading="lazy" onerror="this.src='../../images/UVG.png'">
+                    </div>
+                    <p>${zone.name}</p>
+                `;
+                cont.appendChild(card);
+            });
+        }
+
+        async function loadGame(zone) {
+            const overlay = document.getElementById('overlay');
+            const frame = document.getElementById('gFrame');
+            const title = document.getElementById('gTitle');
+
+            overlay.style.display = 'flex';
+            title.innerText = zone.name;
+            frame.srcdoc = `<h2 style="color:black;text-align:center;font-family:sans-serif;margin-top:20%;">Loading Resources...</h2>`;
+
+            const gameUrl = zone.url.replace('{HTML_URL}', HTML_BASE);
+
+            try {
+                const response = await fetch(gameUrl);
+                if (!response.ok) throw new Error("Game file not found");
+                let html = await response.text();
+
+                const gameDir = gameUrl.substring(0, gameUrl.lastIndexOf('/') + 1);
+                
+                if (html.includes('<head>')) {
+                    html = html.replace('<head>', `<head><base href="${gameDir}">`);
+                }
+
+                frame.srcdoc = html;
+
+            } catch (err) {
+                console.error(err);
+                frame.srcdoc = `<h2 style="color:red;text-align:center;font-family:sans-serif;margin-top:20%;">
+                    Error: The School Firewall blocked the request.<br>Try using the "About:Blank" launcher.
+                </h2>`;
+            }
+        }
+        function closeGame() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('gFrame').srcdoc = '';
+        }
+
+        function toggleFull() {
+            const el = document.getElementById('gFrame');
+            if (el.requestFullscreen) el.requestFullscreen();
+        }
+
+        function filter() {
+            const term = document.getElementById('searchBar').value.toLowerCase();
+            const filtered = allZones.filter(z => z.name.toLowerCase().includes(term));
+            render(filtered);
+        }
+        init();
+    </script>
+</body>
+</html>
